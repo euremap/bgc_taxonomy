@@ -18,7 +18,7 @@ deepest_common_rank_value blank if rank is "none".
 import pandas as pd
 
 INFILE = "data/ibgc_taxonomy_culture.tsv"
-SUMMARY_FILE = "gcf_full_group_table.tsv"
+SUMMARY_FILE = "GCF_by_culture_collection.tsv"
 
 RANKS = ["domain", "kingdom", "phylum", "class",
          "order", "family", "genus", "species", "strain"]
