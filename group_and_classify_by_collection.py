@@ -15,10 +15,11 @@ Tab-separated; in_culture_collection blank if no member is True;
 deepest_common_rank_value blank if rank is "none".
 """
 
+import sys
 import pandas as pd
 
-INFILE = "data/ibgc_taxonomy_culture.tsv"
-SUMMARY_FILE = "GCF_by_culture_collection.tsv"
+INFILE = "data/ibgc_taxonomy_culture_exp.tsv"
+SUMMARY_FILE = "new_GCF_by_culture_collection.tsv"
 
 RANKS = ["domain", "kingdom", "phylum", "class",
          "order", "family", "genus", "species", "strain"]
@@ -31,22 +32,47 @@ def load_gcf_groups(infile):
         dtype="string",
         engine="c",
     )
-    df = df.dropna(subset=["gcf", "taxonomy_path"])
+    
+    # I think these are clean but check anyway:
+    df["taxonomy_path"] = df["taxonomy_path"].str.strip().replace("", pd.NA)
+    # Drop rows lacking taxonomy_path and/or gcf:
+    # remove members that lack a gcf or a taxonomy, but report what is lost
+    n_before = len(df)
+    missing_gcf = df["gcf"].isna()
+    missing_tax = df["taxonomy_path"].isna()
+    n_dropped = int((missing_gcf | missing_tax).sum())
+
+    print(f"dropped {n_dropped} of {n_before} rows "
+          f"({int(missing_gcf.sum())} missing gcf, "
+          f"{int(missing_tax.sum())} missing taxonomy_path, "
+          f"{int((missing_gcf & missing_tax).sum())} missing both)",
+          file=sys.stderr)
+
+    df = df.loc[~(missing_gcf | missing_tax)]
     # normalise whitespace only; DO NOT collapse ".." — empty interior
     # ranks must stay as empty slots to preserve rank alignment
     df["tax_norm"] = (df["taxonomy_path"]
                       .str.strip()
                       .str.replace(r"\s*\.\s*", ".", regex=True)
                       .str.rstrip("."))
+    # Check for mangling of "."'s
+    # n_parts = df["tax_norm"].str.count(r"\.") + 1
+    for norm_tax in df["tax_norm"]:
+        n_parts = norm_tax.count(r"\.") + 1
+        if n_parts > 9:
+            print(f"{norm_tax} is > 9")
+            sys.exit()
 
     # Classify only on the first element of the gcf dot notation
     # df["gcf_group"] = df["gcf"].str.split(".", n=1, expand=True)[0]
     # Classify on the whole gcf dot notation
-    df["gcf_group"] = df["gcf"]
+    df["gcf_group"] = df["gcf"].str.strip()
 
     ranks = (df["tax_norm"].str.split(".", expand=True)
              .reindex(columns=range(len(RANKS)))
+             .astype("string")
              .fillna(""))
+
     ranks.columns = RANKS
     df = pd.concat([df, ranks], axis=1)
     df[RANKS] = df[RANKS].mask(df[RANKS] == "")
@@ -119,7 +145,8 @@ def build_summary_table(infile, outfile=SUMMARY_FILE):
 
     # number of members flagged True in the culture collection
     culture_true = (df["in_culture_collection"]
-                   .str.strip().str.lower().eq("true"))
+                .str.strip().str.lower().eq("true")
+                .fillna(False).astype(bool))
     n_cultured = culture_true.groupby(df["gcf_group"]).sum()
 
     # ibgc identifiers concatenated in file order, but ONLY where
@@ -142,11 +169,15 @@ def build_summary_table(infile, outfile=SUMMARY_FILE):
         "members": cultured_ids.reindex(groups_index).fillna("").values,
     }).reset_index(drop=True)
 
-    # numeric order on the group prefix where possible
-    summary["_k"] = pd.to_numeric(summary["gcf_group"], errors="coerce")
-    summary = (summary.sort_values(["_k", "gcf_group"])
-                     .drop(columns="_k")
-                     .reset_index(drop=True))
+    # natural sort on the dotted GCF id: 2 < 10, and 123.2 < 123.10.
+    # Numeric parts sort before non-numeric ones, so odd IDs can't crash it.
+    def gcf_sort_key(g):
+        return tuple((0, int(p), "") if p.isdigit() else (1, 0, p)
+                     for p in str(g).split("."))
+
+    gcf_vals = summary["gcf_group"].tolist()
+    order = sorted(range(len(gcf_vals)), key=lambda i: gcf_sort_key(gcf_vals[i]))
+    summary = summary.iloc[order].reset_index(drop=True)
 
     summary.to_csv(outfile, sep="\t", index=False, na_rep="")
     print(f"{len(summary)} groups written to {outfile}")
