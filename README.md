@@ -2,21 +2,24 @@
 Working materials used for EUREMAP Consortium project Delieverable D3.3 Taxonomy Report
 
 
-`ibgc_taxonomy_culture_exp.tsv`
+Raw data file (16/11/2026) `ibgc_taxonomy_culture_exp.tsv`
+
 Dropped 12920 of 486708 rows (820 missing gcf, 12177 missing taxonomy_path, 77 missing both)
+
 41709 groups written to GCF_by_culture_collection.tsv
+
 multi-member groups analysed: 19044
 
 Groups by deepest common rank:
-  inter-domain  2517  (13.2%)
-  domain        3919  (20.6%)
-  kingdom       2881  (15.1%)
-  phylum        3666  (19.3%)
-  class         1512  (7.9%)
-  order         1009  (5.3%)
-  family        1111  (5.8%)
-  genus         1532  (8.0%)
-  species        897  (4.7%)
+- inter-domain  2517  (13.2%)
+-  domain        3919  (20.6%)
+-  kingdom       2881  (15.1%)
+-  phylum        3666  (19.3%)
+-  class         1512  (7.9%)
+-  order         1009  (5.3%)
+-  family        1111  (5.8%)
+-  genus         1532  (8.0%)
+-  species        897  (4.7%)
 
 Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
 
