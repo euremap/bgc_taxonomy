@@ -21,6 +21,9 @@ Groups by deepest common rank:
 -  genus         1532  (8.0%)
 -  species        897  (4.7%)
 
+ [<img width="193" height="20" alt="image" src="https://github.com/user-attachments/assets/d4a61223-c89b-49be-bf27-1e0075ef0ad6" />](https://doi.org/10.5281/zenodo.24309970)
+
+
 Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
 
 This work is licensed under a
